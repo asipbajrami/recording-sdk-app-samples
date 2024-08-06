@@ -10,7 +10,7 @@ import { MeetingConfig } from "../types";
 
 import { DyteRecording } from "@dytesdk/recording-sdk";
 
-const defaultUIConfig: UIConfig = {
+const defaultUIConfig = {
     ...defaultConfig,
     designTokens: {
         borderRadius: 'rounded',
@@ -53,7 +53,7 @@ export default function UIKitMeeting(props: {
     const [uiconfig, setuiconfig] = useState<UIConfig | null>(null);
     const [client, initClient] = useDyteClient();
     const [overrides, setOverrides] = useState({});
-    const elementRef = useRef<HTMLDivElement>(null);
+    const elementRef = useRef(null);
 
     useEffect(() => {
         if(!authToken){
@@ -78,26 +78,26 @@ export default function UIKitMeeting(props: {
 
     useEffect(() => {
         if (client !== undefined) {
-            let uiKitConfig: UIConfig = { ...defaultUIConfig };
+            let uiKitConfig = defaultUIConfig as UIConfig;
 
             try {
                 const presetConfig = client.self.suggestedTheme;
                 uiKitConfig = generateConfig(presetConfig).config;
             } catch (error) {
-                console.error("Error generating config:", error);
+                uiKitConfig = defaultUIConfig as UIConfig;
             }
 
-            if ((client as any).__internals__?.features?.hasFeature('video_subscription_override')) {
-                console.log('enable video subscription override');
+            if (client.__internals__.features.hasFeature('video_subscription_override')) {
+                console.log('enbale video subscription override');
                 try {
-                    const overrides = JSON.parse((client as any).__internals__.features.getFeatureValue('video_subscription_override'));
+                    const overrides = JSON.parse(client.__internals__.features.getFeatureValue('video_subscription_override'));
                     const preset = overrides[client.self.organizationId] ?? [];
                     console.log('subscription override', preset);
                     if (preset && preset.length > 0) {
                         setOverrides({ videoUnsubscribed: { preset }});
                     }
-                } catch (error) {
-                    console.error("Error setting overrides:", error);
+                }   catch (error) {
+                    console.log(error);
                 }
             }
 
@@ -112,16 +112,7 @@ export default function UIKitMeeting(props: {
                 uiKitConfig.root["dyte-mixed-grid.activeSpotlight"] = [
                     ["dyte-spotlight-grid", { style: { width: "15%" }, layout: "column" }],
                 ];
-
-                // Customize the name tag to include user ID
-                uiKitConfig.root["dyte-name-tag"] = {
-                    props: {
-                        // Use a custom name format function
-                        nameFormatter: (name: string, id: string) => `${name} (${id})`,
-                    },
-                };
             }
-
             setuiconfig(uiKitConfig);
         }
     }, [client, config]);
